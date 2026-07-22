@@ -125,40 +125,6 @@ Security above), so it can be deployed on any container-friendly platform
 with just three environment variables set as secrets: `ANTHROPIC_API_KEY`,
 `REPORT_APP_USER`, `REPORT_APP_PASSWORD`.
 
-### Option A — Docker, run anywhere (VPS, EC2, your own server)
-
-```bash
-docker build -t ai-reporting-workflow .
-docker run -d \
-  -p 8080:8080 \
-  -e ANTHROPIC_API_KEY=your_key \
-  -e REPORT_APP_USER=admin \
-  -e REPORT_APP_PASSWORD=change_me \
-  --name ai-report ai-reporting-workflow
-```
-
-Test it:
-```bash
-curl -u admin:change_me -F "files=@sample_data/sales_data.csv" \
-  -F "files=@sample_data/market_notes.txt" \
-  http://localhost:8080/generate-report --output AI_Report.pdf
-```
-
-Put this behind nginx or Caddy for HTTPS — Basic Auth is only safe over TLS.
-
-### Option B — Render (easiest for a portfolio demo, free tier available)
-
-1. Push this repo to GitHub.
-2. On Render: New → Web Service → connect the repo → it auto-detects the `Dockerfile`.
-3. Add the three environment variables as secrets in the Render dashboard.
-4. Render gives you HTTPS and a public URL automatically — no reverse proxy setup needed.
-
-### Option C — Railway / Fly.io
-
-Both auto-build from a `Dockerfile` the same way:
-- **Railway**: New Project → Deploy from GitHub repo → add env vars in the Variables tab.
-- **Fly.io**: `fly launch` (detects the Dockerfile), then `fly secrets set ANTHROPIC_API_KEY=... REPORT_APP_USER=... REPORT_APP_PASSWORD=...`, then `fly deploy`.
-
 ### What to check after deploying
 
 - `GET /health` returns `{"status": "ok"}` with no auth
