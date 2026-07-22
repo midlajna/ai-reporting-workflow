@@ -22,7 +22,7 @@ import tempfile
 from functools import wraps
 from pathlib import Path
 
-from flask import Flask, request, send_file, jsonify, Response
+from flask import Flask, request, send_file, jsonify, Response, render_template, render_template_string
 from werkzeug.utils import secure_filename
 
 from ingestion.universal_ingestor import TABULAR_EXTENSIONS, TEXT_EXTENSIONS, IMAGE_EXTENSIONS
@@ -32,6 +32,93 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10 MB per request, tune as needed
 
 ALLOWED_EXTENSIONS = TABULAR_EXTENSIONS | TEXT_EXTENSIONS | IMAGE_EXTENSIONS
+
+HOME_PAGE = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Reporting Workflow</title>
+<style>
+  body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; background:#0d0d14; color:#e8e8f0;
+         max-width:560px; margin:0 auto; padding:32px 20px; }
+  h1 { font-size:1.5rem; color:#a99cff; margin-bottom:4px; }
+  p.sub { color:#9a9ab0; margin-top:0; font-size:0.9rem; }
+  label { display:block; margin:16px 0 6px; font-size:0.85rem; color:#c8c8dc; }
+  input[type=text], input[type=password] { width:100%; padding:10px; border-radius:8px; border:1px solid #35354a;
+         background:#16161f; color:#fff; box-sizing:border-box; }
+  input[type=file] { width:100%; padding:10px 0; }
+  button { margin-top:20px; width:100%; padding:12px; border:none; border-radius:8px;
+         background:#5B4FDB; color:#fff; font-size:1rem; font-weight:600; cursor:pointer; }
+  button:disabled { background:#3a3a55; }
+  #status { margin-top:16px; font-size:0.9rem; white-space:pre-wrap; }
+  a.download { display:inline-block; margin-top:12px; padding:10px 16px; background:#2fbf71;
+         color:#0d0d14; border-radius:8px; text-decoration:none; font-weight:600; }
+</style>
+</head>
+<body>
+  <h1>AI Reporting Workflow</h1>
+  <p class="sub">Upload sales data + supporting documents. Get back an AI-generated PDF report.</p>
+
+  <form id="reportForm">
+    <label>Username</label>
+    <input type="text" id="username" required>
+
+    <label>Password</label>
+    <input type="password" id="password" required>
+
+    <label>Files (CSV, XLSX, JSON, PDF, TXT, DOCX, PPTX, images)</label>
+    <input type="file" id="files" multiple required>
+
+    <button type="submit" id="submitBtn">Generate Report</button>
+  </form>
+
+  <div id="status"></div>
+
+<script>
+document.getElementById('reportForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const statusEl = document.getElementById('status');
+  const user = document.getElementById('username').value;
+  const pass = document.getElementById('password').value;
+  const files = document.getElementById('files').files;
+
+  if (files.length === 0) { statusEl.textContent = 'Select at least one file.'; return; }
+
+  const formData = new FormData();
+  for (const f of files) formData.append('files', f);
+
+  btn.disabled = true;
+  statusEl.textContent = 'Generating report... this can take 20-60 seconds.';
+
+  try {
+    const resp = await fetch('/generate-report', {
+      method: 'POST',
+      headers: { 'Authorization': 'Basic ' + btoa(user + ':' + pass) },
+      body: formData
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({error: resp.statusText}));
+      statusEl.textContent = 'Error: ' + (err.error || resp.status);
+      btn.disabled = false;
+      return;
+    }
+
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    statusEl.innerHTML = 'Report ready. <br><a class="download" href="' + url + '" download="AI_Report.pdf">Download PDF</a>';
+  } catch (err) {
+    statusEl.textContent = 'Request failed: ' + err.message;
+  }
+  btn.disabled = false;
+});
+</script>
+</body>
+</html>
+"""
 
 
 def check_auth(username, password):
@@ -61,6 +148,11 @@ def requires_auth(f):
 
 def is_allowed(filename: str) -> bool:
     return Path(filename).suffix.lower() in ALLOWED_EXTENSIONS
+
+
+@app.route("/", methods=["GET"])
+def home():
+    return render_template("index.html")
 
 
 @app.route("/generate-report", methods=["POST"])
@@ -122,3 +214,4 @@ if __name__ == "__main__":
     if not os.environ.get("REPORT_APP_PASSWORD"):
         print("WARNING: REPORT_APP_PASSWORD not set — server will refuse to start on first request.")
     app.run(host="127.0.0.1", port=5000, debug=False)
+  
