@@ -1,0 +1,20 @@
+{
+  "data": [
+    {
+      "date": "2026-07-05",
+      "region": "North",
+      "product": "Widget A",
+      "units_sold": 150,
+      "revenue": 4500,
+      "cost": 2625
+    },
+    {
+      "date": "2026-07-05",
+      "region": "South",
+      "product": "Widget A",
+      "units_sold": 100,
+      "revenue": 3000,
+      "cost": 1750
+    }
+  ]
+}
