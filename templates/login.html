@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Reporting Workflow — Sign in</title>
+<style>
+  :root {
+    --bg: #0b0b12;
+    --panel: #12121c;
+    --border: #24243a;
+    --purple: #8b6cf0;
+    --purple-dim: #5b4aa8;
+    --text: #e8e6f0;
+    --muted: #8b8798;
+    --red: #f07a7a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-attachment: fixed;
+    background-position: -1px -1px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .wrap { width: 100%; max-width: 420px; }
+  .eyebrow {
+    color: var(--purple);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  h1 {
+    font-size: 26px;
+    margin: 0 0 6px 0;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .sub {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 26px;
+    line-height: 1.6;
+  }
+  .terminal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .titlebar {
+    background: #0e0e17;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.r { background: #f07a7a55; }
+  .dot.y { background: #f0d17a55; }
+  .dot.g { background: #6fd88a55; }
+  .titlebar span { margin-left: 8px; color: var(--muted); font-size: 12px; }
+  .body { padding: 24px; }
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--purple);
+    margin-bottom: 6px;
+    letter-spacing: 0.03em;
+  }
+  .field { margin-bottom: 18px; }
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    background: #0e0e17;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  input:focus { outline: none; border-color: var(--purple); }
+  button {
+    width: 100%;
+    background: var(--purple);
+    color: #0b0b12;
+    border: none;
+    padding: 13px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+  button:hover { background: #a488ff; }
+  .status {
+    margin-top: 14px;
+    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    display: none;
+  }
+  .status.show { display: block; }
+  .status.error { background: #2a1616; color: var(--red); border: 1px solid #4a2424; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">$ ai-reporting-workflow</div>
+  <h1>Sign in</h1>
+  <div class="sub">Enter your credentials to continue to the report generator.</div>
+
+  <div class="terminal">
+    <div class="titlebar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>auth</span>
+    </div>
+    <div class="body">
+      <div class="field">
+        <label>USERNAME</label>
+        <input type="text" id="username" autocomplete="username" placeholder="admin">
+      </div>
+      <div class="field">
+        <label>PASSWORD</label>
+        <input type="password" id="password" autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <button id="continueBtn">Continue</button>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('continueBtn').addEventListener('click', () => {
+  const user = document.getElementById('username').value.trim();
+  const pass = document.getElementById('password').value;
+  const status = document.getElementById('status');
+
+  if (!user || !pass) {
+    status.className = 'status show error';
+    status.textContent = 'Enter both a username and password.';
+    return;
+  }
+
+  sessionStorage.setItem('arw_user', user);
+  sessionStorage.setItem('arw_pass', pass);
+  window.location.href = '/upload';
+});
+
+document.getElementById('password').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('continueBtn').click();
+});
+</script>
+</body>
+</html>
