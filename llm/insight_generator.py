@@ -1,23 +1,25 @@
 """
 insight_generator.py
 Combines quantitative analysis (from pandas) with qualitative summaries
-(from text documents) and asks the LLM to produce a narrative analysis:
-what happened, why it likely happened, and what to watch next.
+(from text documents) and asks Gemini (free tier) to produce a narrative
+analysis: what happened, why it likely happened, and what to watch next.
 """
 import os
 import json
-import anthropic
+import google.generativeai as genai
 
-MODEL = "claude-sonnet-4-5"
+MODEL = "gemini-2.5-flash"
 
 
-def get_client() -> anthropic.Anthropic:
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
+def get_model() -> "genai.GenerativeModel":
+    api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise EnvironmentError(
-            "Set the ANTHROPIC_API_KEY environment variable before running this module."
+            "Set the GEMINI_API_KEY environment variable before running this module. "
+            "Get a free key at https://aistudio.google.com/apikey"
         )
-    return anthropic.Anthropic(api_key=api_key)
+    genai.configure(api_key=api_key)
+    return genai.GenerativeModel(MODEL)
 
 
 def generate_insights(stats_summary: dict, anomalies: str, text_summary: str) -> str:
@@ -25,7 +27,7 @@ def generate_insights(stats_summary: dict, anomalies: str, text_summary: str) ->
     Produce a narrative report section that ties numeric trends/anomalies
     to qualitative context pulled from documents.
     """
-    client = get_client()
+    model = get_model()
 
     prompt = f"""You are a business analyst writing the "Insights & Analysis" section
 of an internal report. You have three inputs:
@@ -47,12 +49,8 @@ Write 3-5 short paragraphs that:
 
 Be direct and concise. Do not restate raw numbers verbatim, interpret them.
 """
-    response = client.messages.create(
-        model=MODEL,
-        max_tokens=800,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    return response.content[0].text
+    response = model.generate_content(prompt)
+    return response.text
 
 
 if __name__ == "__main__":
@@ -60,3 +58,4 @@ if __name__ == "__main__":
     dummy_anomalies = "North region Widget A units_sold dropped to 30 in June (z=-2.1)"
     dummy_text_summary = "- North supplier shortage in June delayed restocking"
     print(generate_insights(dummy_stats, dummy_anomalies, dummy_text_summary))
+    
