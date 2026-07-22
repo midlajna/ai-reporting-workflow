@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Reporting Workflow</title>
+<style>
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: local('JetBrains Mono');
+  }
+  :root {
+    --bg: #0b0b12;
+    --panel: #12121c;
+    --border: #24243a;
+    --purple: #8b6cf0;
+    --purple-dim: #5b4aa8;
+    --text: #e8e6f0;
+    --muted: #8b8798;
+    --green: #6fd88a;
+    --red: #f07a7a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-attachment: fixed;
+    background-position: -1px -1px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+  .wrap { width: 100%; max-width: 640px; }
+  .eyebrow {
+    color: var(--purple);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  h1 {
+    font-size: 28px;
+    margin: 0 0 6px 0;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .sub {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
+  .terminal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .titlebar {
+    background: #0e0e17;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.r { background: #f07a7a55; }
+  .dot.y { background: #f0d17a55; }
+  .dot.g { background: #6fd88a55; }
+  .titlebar span {
+    margin-left: 8px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .body { padding: 24px; }
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--purple);
+    margin-bottom: 6px;
+    letter-spacing: 0.03em;
+  }
+  .field { margin-bottom: 18px; }
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    background: #0e0e17;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  input[type="text"]:focus, input[type="password"]:focus {
+    outline: none;
+    border-color: var(--purple);
+  }
+  .drop {
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .drop:hover { border-color: var(--purple-dim); }
+  .drop.dragover { border-color: var(--purple); color: var(--text); }
+  input[type="file"] { display: none; }
+  .filelist {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .filelist div { padding: 2px 0; }
+  button {
+    width: 100%;
+    background: var(--purple);
+    color: #0b0b12;
+    border: none;
+    padding: 13px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: background 0.15s;
+  }
+  button:hover { background: #a488ff; }
+  button:disabled {
+    background: var(--purple-dim);
+    cursor: not-allowed;
+  }
+  .status {
+    margin-top: 16px;
+    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    display: none;
+  }
+  .status.show { display: block; }
+  .status.info { background: #1b1b2c; color: var(--muted); border: 1px solid var(--border); }
+  .status.error { background: #2a1616; color: var(--red); border: 1px solid #4a2424; }
+  .status.success { background: #16281c; color: var(--green); border: 1px solid #244a30; }
+  .status a { color: var(--green); }
+  .footer {
+    margin-top: 20px;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+  }
+  .footer a { color: var(--purple); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">$ ai-reporting-workflow</div>
+  <h1>Turn raw files into a report</h1>
+  <div class="sub">
+    Drop in any mix of CSVs, spreadsheets, PDFs, Word docs, or slide decks.
+    The numbers get analyzed, the text gets summarized, and Claude writes
+    the insights that connect them — out comes one PDF.
+  </div>
+
+  <div class="terminal">
+    <div class="titlebar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>generate-report</span>
+    </div>
+    <div class="body">
+      <div class="field">
+        <label>USERNAME</label>
+        <input type="text" id="username" autocomplete="username" placeholder="admin">
+      </div>
+      <div class="field">
+        <label>PASSWORD</label>
+        <input type="password" id="password" autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <div class="field">
+        <label>FILES (.csv .xlsx .json .pdf .txt .docx .pptx .png .jpg)</label>
+        <div class="drop" id="drop">Tap to choose files, or drag them here</div>
+        <input type="file" id="fileInput" multiple>
+        <div class="filelist" id="filelist"></div>
+      </div>
+      <button id="submitBtn">Generate report</button>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Files and credentials go straight to this server over HTTPS —
+    nothing is stored after your report is generated. ·
+    <a href="/health">health check</a>
+  </div>
+</div>
+
+<script>
+const drop = document.getElementById('drop');
+const fileInput = document.getElementById('fileInput');
+const filelist = document.getElementById('filelist');
+const submitBtn = document.getElementById('submitBtn');
+const status = document.getElementById('status');
+
+drop.addEventListener('click', () => fileInput.click());
+drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('dragover'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+drop.addEventListener('drop', (e) => {
+  e.preventDefault();
+  drop.classList.remove('dragover');
+  fileInput.files = e.dataTransfer.files;
+  renderFiles();
+});
+fileInput.addEventListener('change', renderFiles);
+
+function renderFiles() {
+  filelist.innerHTML = '';
+  Array.from(fileInput.files).forEach(f => {
+    const d = document.createElement('div');
+    d.textContent = '→ ' + f.name;
+    filelist.appendChild(d);
+  });
+}
+
+function showStatus(type, html) {
+  status.className = 'status show ' + type;
+  status.innerHTML = html;
+}
+
+submitBtn.addEventListener('click', async () => {
+  const user = document.getElementById('username').value.trim();
+  const pass = document.getElementById('password').value;
+  const files = fileInput.files;
+
+  if (!user || !pass) {
+    showStatus('error', 'Enter the username and password for this deployment.');
+    return;
+  }
+  if (!files.length) {
+    showStatus('error', 'Choose at least one file first.');
+    return;
+  }
+
+  const formData = new FormData();
+  for (const f of files) formData.append('files', f);
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Generating… this can take up to a minute';
+  showStatus('info', 'Uploading and processing — analyzing data, summarizing documents, writing insights…');
+
+  try {
+    const resp = await fetch('/generate-report', {
+      method: 'POST',
+      headers: { 'Authorization': 'Basic ' + btoa(user + ':' + pass) },
+      body: formData
+    });
+
+    if (resp.status === 401) {
+      showStatus('error', 'Incorrect username or password.');
+    } else if (!resp.ok) {
+      let msg = 'Something went wrong (status ' + resp.status + ').';
+      try {
+        const err = await resp.json();
+        if (err.error) msg = err.error;
+      } catch (e) {}
+      showStatus('error', msg);
+    } else {
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      showStatus('success', 'Report ready → <a href="' + url + '" download="AI_Report.pdf">Download AI_Report.pdf</a>');
+    }
+  } catch (e) {
+    showStatus('error', 'Network error — the server may be waking up from sleep, try again in ~30s.');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Generate report';
+  }
+});
+</script>
+</body>
+</html>
