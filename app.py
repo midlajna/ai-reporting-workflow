@@ -22,7 +22,7 @@ import tempfile
 from functools import wraps
 from pathlib import Path
 
-from flask import Flask, request, send_file, jsonify, Response, render_template, render_template_string
+from flask import Flask, request, send_file, jsonify, render_template
 from werkzeug.utils import secure_filename
 
 from ingestion.universal_ingestor import TABULAR_EXTENSIONS, TEXT_EXTENSIONS, IMAGE_EXTENSIONS
@@ -130,10 +130,12 @@ def check_auth(username, password):
 
 
 def authenticate():
-    return Response(
-        "Authentication required.", 401,
-        {"WWW-Authenticate": 'Basic realm="Report Generator"'}
-    )
+    # Deliberately omit the WWW-Authenticate header. If present, browsers
+    # intercept 401 responses at the network level and show their own
+    # native login popup — even for fetch()/XHR calls with a manually set
+    # Authorization header. Since this endpoint is only ever called from
+    # our own page's JavaScript, we want our custom error message instead.
+    return jsonify({"error": "Invalid username or password."}), 401
 
 
 def requires_auth(f):
@@ -219,4 +221,4 @@ if __name__ == "__main__":
     if not os.environ.get("REPORT_APP_PASSWORD"):
         print("WARNING: REPORT_APP_PASSWORD not set — server will refuse to start on first request.")
     app.run(host="127.0.0.1", port=5000, debug=False)
-                         
+  
