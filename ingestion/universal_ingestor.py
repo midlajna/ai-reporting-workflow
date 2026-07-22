@@ -32,7 +32,11 @@ def load_json_as_table(filepath: str) -> pd.DataFrame:
         list_values = [v for v in payload.values() if isinstance(v, list)]
         payload = list_values[0] if list_values else [payload]
 
-    return pd.json_normalize(payload)
+    df = pd.json_normalize(payload)
+    # match tabular_ingestor's behavior so merges with CSV/Excel data work cleanly
+    if "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    return df
 
 
 def load_docx_text(filepath: str) -> str:
@@ -123,3 +127,4 @@ if __name__ == "__main__":
     results = ingest_folder("../sample_data")
     for r in results:
         print(r["source"], r["type"])
+        
