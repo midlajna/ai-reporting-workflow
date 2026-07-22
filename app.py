@@ -152,7 +152,12 @@ def is_allowed(filename: str) -> bool:
 
 @app.route("/", methods=["GET"])
 def home():
-    return render_template("index.html")
+    return render_template("login.html")
+
+
+@app.route("/upload", methods=["GET"])
+def upload_page():
+    return render_template("upload.html")
 
 
 @app.route("/generate-report", methods=["POST"])
@@ -214,4 +219,4 @@ if __name__ == "__main__":
     if not os.environ.get("REPORT_APP_PASSWORD"):
         print("WARNING: REPORT_APP_PASSWORD not set — server will refuse to start on first request.")
     app.run(host="127.0.0.1", port=5000, debug=False)
-  
+                         
