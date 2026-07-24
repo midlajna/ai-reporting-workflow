@@ -12,7 +12,7 @@ text files, synthesizes narrative insights tying the two together, and
 outputs a polished PDF report.
 
 Usage:
-    export ANTHROPIC_API_KEY=your_key_here
+    export GEMINI_API_KEY=your_key_here
     python main.py --input sample_data --out output/AI_Report.pdf
 """
 import argparse
@@ -21,8 +21,8 @@ import pandas as pd
 
 from ingestion.universal_ingestor import ingest_folder
 from analysis.data_analyzer import group_summary, trend_by_period, detect_anomalies
-from llm.summarizer import summarize_text
-from llm.insight_generator import generate_insights
+from llm.local_summarizer import summarize_text
+from llm.local_insight_generator import generate_insights
 from llm.pii_scrubber import scrub_text
 from report.report_builder import build_report
 
@@ -51,7 +51,7 @@ def run_pipeline(
     trend = trend_by_period(df, date_col, value_col, freq="MS")
     anomalies = detect_anomalies(df, group_col, "units_sold") if "units_sold" in df.columns else pd.DataFrame()
 
-    print("[4/6] Scrubbing PII and summarizing document context with LLM ...")
+    print("[4/6] Scrubbing PII and summarizing document context (local, no API) ...")
     if text_blocks:
         combined_text = "\n\n".join(text_blocks)
         combined_text, pii_counts = scrub_text(combined_text)
@@ -61,7 +61,7 @@ def run_pipeline(
     else:
         text_summary = "No supporting text documents were provided."
 
-    print("[5/6] Generating narrative insights with LLM ...")
+    print("[5/6] Generating narrative insights (local, no API) ...")
     stats_for_llm = region_summary.set_index(group_col)["sum"].to_dict()
     anomalies_text = anomalies.to_string(index=False) if len(anomalies) else "None detected."
     insights = generate_insights(stats_for_llm, anomalies_text, text_summary)
@@ -87,3 +87,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     run_pipeline(args.input, args.out)
+    
