@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Reporting Workflow</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface2: #334155;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --accent: #10b981;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+      line-height: 1.5;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 640px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.4rem;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      border: 1px solid var(--surface2);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    }
+
+    .dropzone {
+      border: 2px dashed var(--surface2);
+      border-radius: var(--radius);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+
+    .dropzone:hover,
+    .dropzone.dragover {
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.08);
+    }
+
+    .dropzone .icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+      opacity: 0.7;
+    }
+
+    .dropzone h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+
+    .dropzone p {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .dropzone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .file-list {
+      margin-top: 1.25rem;
+      display: none;
+    }
+
+    .file-list.visible {
+      display: block;
+    }
+
+    .file-list h4 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 0.6rem;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 0.55rem 0.85rem;
+      margin-bottom: 0.4rem;
+      font-size: 0.9rem;
+    }
+
+    .file-item .name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 75%;
+    }
+
+    .file-item .size {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .file-item .remove {
+      background: none;
+      border: none;
+      color: var(--danger);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 0 0.25rem;
+      line-height: 1;
+    }
+
+    .title-field {
+      margin-top: 1.25rem;
+    }
+
+    .title-field label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .title-field input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--surface2);
+      border-radius: 8px;
+      padding: 0.65rem 0.9rem;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .title-field input:focus {
+      border-color: var(--primary);
+    }
+
+    .actions {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    button.primary {
+      flex: 1;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.8rem 1.2rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    button.primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+    }
+
+    button.primary:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    .spinner.visible {
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .status {
+      margin-top: 1.25rem;
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    .status.visible {
+      display: block;
+    }
+
+    .status.success {
+      background: rgba(16, 185, 129, 0.15);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .status.error {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .status.info {
+      background: rgba(59, 130, 246, 0.15);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    footer {
+      margin-top: 2.5rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    .supported {
+      margin-top: 1.5rem;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .supported span {
+      display: inline-block;
+      background: var(--surface);
+      border: 1px solid var(--surface2);
+      border-radius: 4px;
+      padding: 0.15rem 0.45rem;
+      margin: 0.15rem;
+      font-family: ui-monospace, monospace;
+      font-size: 0.72rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>AI Reporting Workflow</h1>
+      <p>Upload data → get a polished PDF report. Runs fully locally.</p>
+    </header>
+
+    <div class="card">
+      <div class="dropzone" id="dropzone">
+        <div class="icon">📂</div>
+        <h3>Drop files here or click to browse</h3>
+        <p>CSV, Excel, JSON, PDF, TXT, DOCX, PPTX, images</p>
+        <input type="file" id="fileInput" multiple
+               accept=".csv,.xlsx,.xls,.json,.pdf,.txt,.docx,.pptx,.png,.jpg,.jpeg" />
+      </div>
+
+      <div class="file-list" id="fileList">
+        <h4>Selected files</h4>
+        <div id="fileItems"></div>
+      </div>
+
+      <div class="title-field">
+        <label for="reportTitle">Report title (optional)</label>
+        <input type="text" id="reportTitle" placeholder="AI Reporting Workflow – Analysis Report" />
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="generateBtn" disabled>
+          <span class="spinner" id="spinner"></span>
+          <span id="btnText">Generate Report</span>
+        </button>
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+
+    <div class="supported">
+      Supported:
+      <span>.csv</span><span>.xlsx</span><span>.xls</span><span>.json</span>
+      <span>.pdf</span><span>.txt</span><span>.docx</span><span>.pptx</span>
+      <span>.png</span><span>.jpg</span>
+    </div>
+
+    <footer>
+      Local · Deterministic · No external AI API
+    </footer>
+  </div>
+
+  <script>
+    const dropzone = document.getElementById("dropzone");
+    const fileInput = document.getElementById("fileInput");
+    const fileList = document.getElementById("fileList");
+    const fileItems = document.getElementById("fileItems");
+    const generateBtn = document.getElementById("generateBtn");
+    const spinner = document.getElementById("spinner");
+    const btnText = document.getElementById("btnText");
+    const statusEl = document.getElementById("status");
+    const reportTitle = document.getElementById("reportTitle");
+
+    let selectedFiles = [];
+
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + " B";
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+      return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+    }
+
+    function renderFiles() {
+      fileItems.innerHTML = "";
+      if (selectedFiles.length === 0) {
+        fileList.classList.remove("visible");
+        generateBtn.disabled = true;
+        return;
+      }
+      fileList.classList.add("visible");
+      generateBtn.disabled = false;
+
+      selectedFiles.forEach((file, idx) => {
+        const div = document.createElement("div");
+        div.className = "file-item";
+        div.innerHTML = `
+          <span class="name">${file.name}</span>
+          <span class="size">${formatSize(file.size)}</span>
+          <button class="remove" data-idx="${idx}" title="Remove">×</button>
+        `;
+        fileItems.appendChild(div);
+      });
+
+      fileItems.querySelectorAll(".remove").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          selectedFiles.splice(parseInt(btn.dataset.idx), 1);
+          renderFiles();
+        });
+      });
+    }
+
+    function addFiles(fileListObj) {
+      const newFiles = Array.from(fileListObj);
+      // Avoid exact duplicates by name+size
+      newFiles.forEach(f => {
+        if (!selectedFiles.some(s => s.name === f.name && s.size === f.size)) {
+          selectedFiles.push(f);
+        }
+      });
+      renderFiles();
+      hideStatus();
+    }
+
+    dropzone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropzone.classList.add("dragover");
+    });
+    dropzone.addEventListener("dragleave", () => {
+      dropzone.classList.remove("dragover");
+    });
+    dropzone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("dragover");
+      if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files.length) addFiles(fileInput.files);
+      fileInput.value = ""; // allow re-selecting same file
+    });
+
+    function showStatus(msg, type) {
+      statusEl.textContent = msg;
+      statusEl.className = "status visible " + type;
+    }
+    function hideStatus() {
+      statusEl.className = "status";
+    }
+
+    generateBtn.addEventListener("click", async () => {
+      if (selectedFiles.length === 0) return;
+
+      generateBtn.disabled = true;
+      spinner.classList.add("visible");
+      btnText.textContent = "Generating…";
+      showStatus("Analyzing data and building your PDF report. This may take a few seconds…", "info");
+
+      const formData = new FormData();
+      selectedFiles.forEach(f => formData.append("files", f));
+      if (reportTitle.value.trim()) {
+        formData.append("title", reportTitle.value.trim());
+      }
+
+      try {
+        const resp = await fetch("/generate-report", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!resp.ok) {
+          let errMsg = "Generation failed";
+          try {
+            const data = await resp.json();
+            errMsg = data.error || errMsg;
+          } catch (_) {}
+          throw new Error(errMsg);
+        }
+
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "AI_Report.pdf";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+
+        showStatus("Report generated successfully — download started.", "success");
+      } catch (err) {
+        showStatus(err.message || "Something went wrong", "error");
+      } finally {
+        spinner.classList.remove("visible");
+        btnText.textContent = "Generate Report";
+        generateBtn.disabled = selectedFiles.length === 0;
+      }
+    });
+  </script>
+</body>
+</html>
